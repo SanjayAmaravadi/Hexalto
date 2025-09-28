@@ -406,7 +406,6 @@ const StudentDashboard = () => {
                     <div key={s.id} className="flex justify-between items-center p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{s.class}</p>
-                        <p className="text-sm text-muted-foreground">Code: {s.code}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-green-100 text-green-800">Active</Badge>
@@ -439,7 +438,7 @@ const StudentDashboard = () => {
                     return (
                       <div key={att.id} className="flex justify-between items-center p-3 border rounded-lg">
                         <div>
-                          <p className="font-medium">{att.class} - {att.code}</p>
+                          <p className="font-medium">{att.class}</p>
                           <p className="text-sm text-muted-foreground">{dateStr}</p>
                         </div>
                         {status === 'present' ? (

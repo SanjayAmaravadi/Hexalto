@@ -63,6 +63,32 @@ const FocusMode = () => {
     return () => clearTimeout(t);
   }, [session, codeVerified]);
 
+  // If the verification dialog is open and not completed within 30s, mark absent and exit
+  useEffect(() => {
+    if (!verifyOpen || codeVerified) return;
+    let cancelled = false;
+    const to = setTimeout(async () => {
+      if (cancelled || codeVerified) return;
+      try {
+        if (sessionId && currentUser?.uid) {
+          const pRef = doc(db, 'sessions', sessionId, 'participants', currentUser.uid);
+          await updateDoc(pRef, {
+            status: 'absent',
+            present: false,
+            exitedEarly: true,
+            exitedAt: serverTimestamp(),
+            codeVerified: false,
+            codeTimeoutAbsent: true,
+          });
+        }
+      } catch {}
+      setVerifyOpen(false);
+      try { if (document.fullscreenElement) { document.exitFullscreen?.(); } } catch {}
+      navigate('/student-dashboard');
+    }, 30000);
+    return () => { cancelled = true; clearTimeout(to); };
+  }, [verifyOpen, codeVerified, sessionId, currentUser, navigate]);
+
   // Safety: ensure any camera/mic streams are stopped within 3 seconds after entering Focus Mode
   useEffect(() => {
     const stopAllMediaStreams = () => {
@@ -126,7 +152,6 @@ const FocusMode = () => {
       <div className="max-w-md mx-auto">
         <Card className="border-green-500">
           <CardHeader className="text-center">
-            <CardTitle className="text-green-600">Focus Mode Active</CardTitle>
             <Badge variant="secondary" className="bg-green-100 text-green-800">
               Class in Session
             </Badge>
@@ -134,9 +159,7 @@ const FocusMode = () => {
           <CardContent className="space-y-4">
             <div className="text-center">
               <h3 className="text-lg font-semibold">{session.class}</h3>
-              <p className="text-muted-foreground">Code: {session.code}</p>
             </div>
-
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">{remaining || '--:--'}</div>
               <p className="text-sm text-muted-foreground">Time Remaining</p>
@@ -217,9 +240,6 @@ const FocusMode = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <div className="text-sm text-muted-foreground">Hint: It matches the session code.</div>
-            </div>
             <Input
               placeholder="Enter code"
               value={verifyInput}
